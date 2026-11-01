@@ -11,6 +11,8 @@ The assistant does not run inside Otzaria. The plugin polls the companion for co
 
 **Status: integrated prototype.** The repository now contains the MCP companion, complete plugin UI/client modules, conservative policy, PDF filter, tests, and packaging script. It has not yet been proven inside a real Otzaria installation.
 
+**Versioning:** the local MCP companion is version 0.3.0; the separately installed Otzaria plugin remains version 0.2.0. They are versioned independently, and the plugin package is unchanged by companion-only updates.
+
 ## Install and connect
 
 1. Install the Test Bridge plugin in Otzaria. Until a rebuilt package is published, use the supplied plugin package you already have.
