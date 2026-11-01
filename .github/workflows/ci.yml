@@ -9,6 +9,8 @@ jobs:
         with:
           node-version: 22
       - run: npm install
+      - run: npm audit --json > npm-audit.json || true
+      - run: node -e "const a=require('./npm-audit.json'); console.log('npm audit summary:', JSON.stringify(a.metadata && a.metadata.vulnerabilities)); for (const [n,v] of Object.entries(a.vulnerabilities || {})) console.log(n, v.severity, 'fix:', JSON.stringify(v.fixAvailable));"
       - run: npm run build
       - run: npm test
       - run: npm run pack
