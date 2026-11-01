@@ -41,7 +41,7 @@ server.tool("otzaria_get_logs", "Read captured console output, JavaScript errors
 
 server.tool("otzaria_call", "Request an Otzaria API call through the plugin. The plugin's own approval panel controls calls requiring human approval. Unknown methods are not assumed safe.", {
   method: z.string().min(1).max(160),
-  params: z.record(z.unknown()).default({}),
+  params: z.record(z.string(), z.unknown()).default({}),
 }, async ({ method, params }) => {
   try { return result(await bridge.dispatch("call", { method, params }, 120_000)); } catch (error) { return fail(error); }
 });
