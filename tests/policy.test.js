@@ -1,0 +1,12 @@
+'use strict';
+const assert=require('assert');
+const P=require('../plugin-integration/js/bridge-policy.js');
+const k=(m,a)=>P.classify(m,a).kind;
+for(const m of ['library.content.read','search.query','storage.get','library.list'])assert.strictEqual(k(m,[]),'approval',m);
+assert.strictEqual(k('library.content.read',['library.content.read']),'read');
+assert.strictEqual(k('library.content.readAll',['library.content.read']),'approval');
+for(const m of ['fs.pickUserFolder','network.fetch','ui.pickFolder','plugin.install','library.openBook','storage.set','search.rebuild_clear'])assert.strictEqual(k(m,[m]),'approval',m);
+for(const m of ['', '../x','a','library.','Library.read','lib rary.read',null,undefined,42,'library.read;rm'])assert.strictEqual(k(m,['library.read']),'invalid',String(m));
+assert.deepStrictEqual(P.parseAllowlist('library.a\n# comment\n\n search.b \nnot valid\r\nfs.x'),['library.a','search.b','fs.x']);
+assert.deepStrictEqual(P.parseAllowlist(null),[]);
+console.log('POLICY TESTS PASSED');
