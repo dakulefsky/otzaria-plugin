@@ -4,6 +4,11 @@
   var Policy = (typeof module !== 'undefined' && module.exports) ? require('./bridge-policy.js') : root.BridgePolicy;
   var Filter = (typeof module !== 'undefined' && module.exports) ? require('./pdf-filter.js') : root.PdfFilter;
   var MAX_RESULT_CHARS = 200000, MAX_PAGES = 12;
+  function isValidPort(value) {
+    if (typeof value !== 'string' || !/^\d{1,5}$/.test(value)) return false;
+    var port = Number(value);
+    return Number.isInteger(port) && port >= 1 && port <= 65535;
+  }
   function unwrapHttp(res) {
     if (typeof res === 'string') return { status: 200, body: res };
     if (!res || typeof res !== 'object') return { status: 0, body: '' };
@@ -118,7 +123,7 @@
       stop: function () { running = false; state.connected = false; notify(); return deps.http('POST', '/plugin/bye', {}).catch(function () {}); }
     };
   }
-  var api = { createAgent: createAgent, unwrapHttp: unwrapHttp, pickText: pickText };
+  var api = { createAgent: createAgent, unwrapHttp: unwrapHttp, pickText: pickText, isValidPort: isValidPort };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.BridgeCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);
