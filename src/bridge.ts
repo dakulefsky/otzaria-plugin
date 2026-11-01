@@ -131,7 +131,7 @@ export class LocalBridge {
           this.send(res, 200, { commands: [] });
         }, waitMs);
         this.waiter = { res, timer };
-        req.on("close", () => {
+        res.on("close", () => {
           if (this.waiter?.res === res) { clearTimeout(timer); this.waiter = null; }
         });
         return;
