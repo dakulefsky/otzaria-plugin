@@ -167,6 +167,7 @@ export class LocalBridge {
         return;
       }
       if (req.method === "POST" && url.pathname === "/plugin/bye") {
+        if (this.waiter) { clearTimeout(this.waiter.timer); this.waiter.res.end(JSON.stringify({ commands: [] })); this.waiter = null; }
         this.hello = null;
         this.lastPollAt = 0;
         this.record("plugin.disconnected", {});
