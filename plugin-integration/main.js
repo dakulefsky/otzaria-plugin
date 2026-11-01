@@ -50,7 +50,14 @@
   function loadSettings() {
     return bridge('storage.get', { key: KEY }).then(function (r) {
       var v = r && typeof r === 'object' && 'value' in r ? r.value : r;
-      return typeof v === 'string' ? JSON.parse(v) : v;
+      var saved = typeof v === 'string' ? JSON.parse(v) : v;
+      if (saved && typeof saved === 'object') {
+        delete saved.token;
+        var clean = JSON.stringify({ port: saved.port, transport: saved.transport, method: saved.method, auto: saved.auto });
+        try { localStorage.setItem(KEY, clean); } catch (e) {}
+        bridge('storage.set', { key: KEY, value: clean }).catch(function () {});
+      }
+      return saved;
     }).catch(function () {
       try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; }
     });
