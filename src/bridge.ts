@@ -1,5 +1,8 @@
 import http from "node:http";
 import { randomBytes, timingSafeEqual } from "node:crypto";
+import { chmod, mkdir, readFile, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 
 type Command = { id: string; type: string; params: Record<string, unknown> };
 type Pending = { resolve: (value: unknown) => void; reject: (error: Error) => void; timer: NodeJS.Timeout };
@@ -14,7 +17,8 @@ const CONNECTED_MS = 45_000;
 
 export class LocalBridge {
   private server?: http.Server;
-  private readonly token = randomBytes(16).toString("hex");
+  private token = "";
+  private tokenFile = "";
   private port = 0;
   private hello: PluginHello | null = null;
   private lastPollAt = 0;
@@ -25,6 +29,18 @@ export class LocalBridge {
   private httpError: string | null = null;
 
   async start(requestedPort = Number(process.env.OTZARIA_BRIDGE_PORT ?? 47615)) {
+    const tokenDir = process.env.OTZARIA_BRIDGE_DIR ?? path.join(os.homedir(), ".otzaria-bridge");
+    await mkdir(tokenDir, { recursive: true, mode: 0o700 });
+    this.tokenFile = path.join(tokenDir, "token");
+    try {
+      const existing = (await readFile(this.tokenFile, "utf8")).trim();
+      if (/^[0-9a-f]{32}$/.test(existing)) this.token = existing;
+    } catch { /* create a new pairing token below */ }
+    if (!this.token) {
+      this.token = randomBytes(16).toString("hex");
+      await writeFile(this.tokenFile, this.token + "\\n", { mode: 0o600, flag: "w" });
+    }
+    await chmod(this.tokenFile, 0o600);
     this.server = http.createServer((req, res) => { void this.handle(req, res); });
     this.server.on("error", error => { this.httpError = error.message; });
     await new Promise<void>((resolve, reject) => {
@@ -32,7 +48,7 @@ export class LocalBridge {
       this.server!.listen(requestedPort, "127.0.0.1", resolve);
     });
     this.port = (this.server.address() as { port: number }).port;
-    return { host: "127.0.0.1", port: this.port, token: this.token };
+    return { host: "127.0.0.1", port: this.port, tokenFile: this.tokenFile };
   }
 
   private send(res: http.ServerResponse, status: number, value: unknown) {
@@ -184,6 +200,7 @@ export class LocalBridge {
       httpError: this.httpError,
       host: "127.0.0.1",
       port: this.port,
+      pairingTokenFile: this.tokenFile,
       connected: this.connected(),
       plugin: this.hello,
       lastPollMsAgo: this.lastPollAt ? Date.now() - this.lastPollAt : null,
