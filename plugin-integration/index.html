@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test Bridge</title>
+<style>
+:root{color-scheme:light dark}*{box-sizing:border-box}body{margin:0;padding:16px;font:14px/1.5 system-ui,sans-serif;background:Canvas;color:CanvasText}main{max-width:820px;margin:0 auto}h1{font-size:20px;margin:0 0 4px}h2{font-size:15px;margin:0 0 8px}p.hint{margin:0 0 10px;opacity:.75}section{border:1px solid GrayText;border-radius:6px;padding:12px;margin:0 0 12px}label{display:block;margin:8px 0 2px}input,select,textarea{width:100%;font:inherit;padding:6px;background:Field;color:FieldText;border:1px solid GrayText;border-radius:4px;direction:ltr;text-align:left}textarea{font-family:ui-monospace,Consolas,monospace;font-size:12px}button{font:inherit;padding:6px 14px;margin:8px 0 0 6px;cursor:pointer;background:ButtonFace;color:ButtonText;border:1px solid GrayText;border-radius:4px}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid Highlight;outline-offset:2px}.row{display:flex;gap:8px;flex-wrap:wrap}.row>div{flex:1 1 200px}#state{font-weight:600}#approvals .item{border:2px solid Highlight;border-radius:6px;padding:8px;margin:0 0 8px}#approvals pre,#activity{direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;margin:6px 0 0}#activity{max-height:280px;overflow:auto;border:1px solid GrayText;border-radius:4px;padding:8px}
+</style>
+</head>
+<body>
+<main>
+<h1>Test Bridge</h1>
+<p class="hint">Lets an AI assistant connected to the local companion test plugins in this Otzaria. Every call waits here for your click unless you list its exact name below.</p>
+<div id="state" role="status" aria-live="polite">Not connected</div>
+<section>
+<h2>Pairing</h2>
+<div class="row"><div><label for="s-port">Companion port</label><input id="s-port" value="47615" inputmode="numeric"></div><div><label for="s-token">Token</label><input id="s-token" type="password" autocomplete="off" spellcheck="false" placeholder="32 hex characters from the companion; not saved"></div></div>
+<div class="row"><div><label for="s-transport">Transport</label><select id="s-transport"><option value="bridge">Otzaria bridge fetch</option><option value="browser">Browser fetch</option></select></div><div><label for="s-method">Bridge fetch method</label><input id="s-method" value="network.fetch" spellcheck="false"></div></div>
+<label for="s-allow">Auto-run list: exact method names, one per line. Leave empty to approve every call.</label>
+<textarea id="s-allow" rows="3" spellcheck="false" placeholder="Only add methods you have verified are read-only in the Otzaria API reference"></textarea>
+<button type="button" id="btn-connect">Connect</button><button type="button" id="btn-disconnect">Disconnect</button>
+</section>
+<section><h2>Waiting for your approval</h2><div id="approvals" aria-live="assertive"><span class="hint">Nothing waiting.</span></div></section>
+<section><h2>Activity</h2><div id="activity" role="log"></div></section>
+</main>
+<script>window.__errors=[];window.addEventListener("error",function(e){window.__errors.push(String(e.message))});window.addEventListener("unhandledrejection",function(e){window.__errors.push("unhandledrejection: "+String(e.reason))});</script>
+<script src="js/pdf-filter.js"></script><script src="js/bridge-policy.js"></script><script src="js/bridge-core.js"></script><script src="main.js"></script>
+</body></html>
