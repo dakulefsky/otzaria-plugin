@@ -1,6 +1,10 @@
 'use strict';
 const assert=require('assert'),http=require('http');
-const {createAgent}=require('../plugin-integration/js/bridge-core.js');
+const {createAgent,isValidPort}=require('../plugin-integration/js/bridge-core.js');
+assert.strictEqual(isValidPort('47615'),true);
+assert.strictEqual(isValidPort('1'),true);
+assert.strictEqual(isValidPort('65535'),true);
+for(const p of ['', '0', '65536', '-1', '47615x', '1.5', '１２３']) assert.strictEqual(isValidPort(p),false,'invalid port accepted: '+p);
 const TOKEN='0123456789abcdef0123456789abcdef',PORT=48761;
 let hello=null,lastPoll=0,queue=[],waiter=null,pending=new Map(),calls=[],logs=[],approvals=[],allow=[];
 function send(res,status,obj){res.writeHead(status,{'content-type':'application/json','access-control-allow-origin':'*'});res.end(JSON.stringify(obj));}
