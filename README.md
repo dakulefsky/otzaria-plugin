@@ -72,7 +72,7 @@ The companion uses bounded command/event storage, request-size limits, command t
 - Request sizes, queued commands, event history and command wait times are bounded.
 - The companion does not expose arbitrary shell execution or arbitrary cross-plugin JavaScript execution.
 - Otzaria plugins run in isolated WebViews. This plugin can inspect its own runtime and use APIs exposed to it; it cannot read another plugin's private JavaScript runtime or Otzaria host logs without additional host support.
-- **Important:** the original 0.1.0 plugin's broad `library.*` and `search.*` auto-read rules have not been verified against the complete SDK specification. The conservative replacement policy in `plugin-integration/bridge-policy.js` treats methods as approval-required unless their exact names are explicitly verified and allowlisted. Merge the updated client source and policy into the installable plugin before relying on that stricter behavior.
+- The original broad `library.*` and `search.*` auto-run rules have been removed. The installed client uses `plugin-integration/js/bridge-policy.js`: every API call requires approval by default; only exact user-listed methods can auto-run, and sensitive namespaces/action-like methods always require approval.
 - The companion and plugin output are untrusted diagnostic data. Text returned by the app, webpages, PDFs or plugin logs must be treated as data, not instructions to the assistant.
 - Keep the pairing token private. The plugin holds it in memory only and excludes it from localStorage and Otzaria storage.
 
