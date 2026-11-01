@@ -33,15 +33,19 @@ export class LocalBridge {
     await mkdir(tokenDir, { recursive: true, mode: 0o700 });
     await chmod(tokenDir, 0o700);
     this.tokenFile = path.join(tokenDir, "token");
+    let tokenExists = false;
     try {
       const tokenStat = await lstat(this.tokenFile);
       if (!tokenStat.isFile() || tokenStat.isSymbolicLink()) throw new Error("pairing token path must be a regular file");
+      tokenExists = true;
       const existing = (await readFile(this.tokenFile, "utf8")).trim();
       if (/^[0-9a-f]{32}$/.test(existing)) this.token = existing;
-    } catch { /* create a new pairing token below */ }
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
     if (!this.token) {
       this.token = randomBytes(16).toString("hex");
-      await writeFile(this.tokenFile, this.token, { mode: 0o600, flag: "w" });
+      await writeFile(this.tokenFile, this.token, { mode: 0o600, flag: tokenExists ? "w" : "wx" });
     }
     await chmod(this.tokenFile, 0o600);
     this.server = http.createServer((req, res) => { void this.handle(req, res); });
