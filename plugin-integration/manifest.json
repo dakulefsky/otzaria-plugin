@@ -1,1 +1,32 @@
-{"id":"test-bridge","name":"Test Bridge","version":"0.2.0","description":"Local MCP companion bridge for Otzaria plugin diagnostics.","entrypoint":"index.html"}
+{
+  "schemaVersion": 1,
+  "id": "test-bridge",
+  "name": "Test Bridge",
+  "version": "0.2.0",
+  "author": "DanTheMan",
+  "description": "Connect an MCP assistant to a local Otzaria plugin testing bridge.",
+  "stability": "experimental",
+  "minAppVersion": "0.9.89",
+  "entrypoint": "index.html",
+  "permissions": [
+    "network.access",
+    "network.localhost",
+    "plugin.storage.read",
+    "plugin.storage.write"
+  ],
+  "network": {
+    "enabled": true,
+    "allowlist": [
+      "127.0.0.1",
+      "localhost",
+      "www.oraysa.org",
+      "oraysa-media.s3.amazonaws.com"
+    ]
+  },
+  "contributes": {
+    "toolTab": {
+      "title": "Test Bridge",
+      "iconName": "book_24_regular"
+    }
+  }
+}
