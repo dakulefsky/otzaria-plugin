@@ -13,7 +13,8 @@
     "check": "npm run build",
     "test:policy": "node tests/policy.test.js",
     "test:e2e": "node tests/e2e.js",
-    "test": "npm run test:policy && npm run test:e2e",
+    "test": "npm run test:policy && npm run test:e2e && npm run test:mcp",
+    "test:mcp": "node tests/mcp.e2e.js",
     "pack": "python3 scripts/pack-plugin.py"
   },
   "dependencies": {
