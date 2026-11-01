@@ -35,7 +35,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 <h2>Pairing</h2>
 <div class="row"><div><label for="s-port">Companion port</label><input id="s-port" value="47615" inputmode="numeric"></div><div><label for="s-token">Token</label><input id="s-token" type="password" autocomplete="off" spellcheck="false" placeholder="32 hex characters from the companion; not saved"></div></div>
 <div class="row"><div><label for="s-transport">Transport</label><select id="s-transport"><option value="bridge">Otzaria bridge fetch</option><option value="browser">Browser fetch</option></select></div><div><label for="s-method">Bridge fetch method</label><input id="s-method" value="network.fetch" spellcheck="false"></div></div>
-<label for="s-allow">Auto-run list: exact method names, one per line. Leave empty to approve every call.</label>
+<label for="s-allow">Auto-run list: exact method names, one per line. Leave empty to require approval for every call.</label>
 <textarea id="s-allow" rows="3" spellcheck="false" placeholder="Only add methods you have verified are read-only in the Otzaria API reference"></textarea>
 <button type="button" id="btn-connect">Connect</button><button type="button" id="btn-disconnect">Disconnect</button>
 </section>
