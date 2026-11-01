@@ -12,6 +12,11 @@ jobs:
       - run: npm run build
       - run: npm test
       - run: npm run pack
+      - uses: actions/upload-artifact@v4
+        with:
+          name: test-bridge-otzplugin
+          path: dist/*.otzplugin
+          if-no-files-found: error
   otzaria-plugin:
     runs-on: ubuntu-latest
     steps:
