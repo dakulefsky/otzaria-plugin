@@ -51,5 +51,5 @@ function dispatch(type,params){return new Promise((resolve,reject)=>{const id=Ma
  assert.strictEqual(discovery[0].pdfCount,1);assert.ok(discovery[1].error&&discovery[2].error&&discovery[3].error);
  assert.strictEqual(calls.filter(x=>x==='network.fetch').length,1);
  assert.ok(!JSON.stringify(logs).includes(TOKEN));
- await agent.stop();server.close();console.log('PLUGIN/HTTP E2E TESTS PASSED');
+ await agent.stop();server.closeAllConnections();server.close();console.log('PLUGIN/HTTP E2E TESTS PASSED');
 })().catch(e=>{console.error(e);server.close();process.exitCode=1;});
