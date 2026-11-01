@@ -42,9 +42,9 @@ function dispatch(type,params){return new Promise((resolve,reject)=>{const id=Ma
  approvals=[];allow=['library.content.read'];
  await dispatch('call',{method:'library.content.read',params:{ref:'K2a'}});
  assert.deepStrictEqual(approvals,[]);
- allow=['fs.pickUserFolder'];await dispatch('call',{method:'call',params:{method:'fs.pickUserFolder',params:{}}});
+ allow=['fs.pickUserFolder'];await dispatch('call',{method:'fs.pickUserFolder',params:{}});
  assert.deepStrictEqual(approvals,['fs.pickUserFolder']);
- let declined=await dispatch('call',{method:'call',params:{method:'fs.deleteThing',params:{}}}).then(()=>false, e=>/Declined/.test(e.message));
+ let declined=await dispatch('call',{method:'fs.deleteThing',params:{}}).then(()=>false, e=>/Declined/.test(e.message));
  assert.strictEqual(declined,true);assert.ok(!calls.includes('fs.deleteThing'));
  let invalid=await dispatch('call',{method:'../../etc',params:{}}).then(()=>false,e=>/Invalid method/.test(e.message));assert.strictEqual(invalid,true);
  const discovery=await dispatch('discover',{pages:['https://www.oraysa.org/daf/k2a','https://169.254.169.254/latest','http://www.oraysa.org/x','https://www.oraysa.org:8443/a']});
