@@ -3,7 +3,7 @@ import path from "node:path";
 import { realpath } from "node:fs/promises";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { z } from "zod";
+import * as z from "zod/v4";
 import { readManifest, validateManifest } from "./manifest.js";
 import { analyzeSource } from "./analyze.js";
 import { LocalBridge } from "./bridge.js";
