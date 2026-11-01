@@ -38,7 +38,7 @@ export class LocalBridge {
     } catch { /* create a new pairing token below */ }
     if (!this.token) {
       this.token = randomBytes(16).toString("hex");
-      await writeFile(this.tokenFile, this.token + "\\n", { mode: 0o600, flag: "w" });
+      await writeFile(this.tokenFile, this.token, { mode: 0o600, flag: "w" });
     }
     await chmod(this.tokenFile, 0o600);
     this.server = http.createServer((req, res) => { void this.handle(req, res); });
