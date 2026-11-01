@@ -9,7 +9,7 @@ AI assistant -- MCP stdio --> companion (this repository)
 
 The assistant does not run inside Otzaria. The plugin polls the companion for commands, so the companion listens only on `127.0.0.1`.
 
-**Status: integrated prototype; not yet validated inside Otzaria. The repository now contains the complete plugin UI, bridge core, conservative policy and PDF filter in plugin-integration/, plus policy/protocol tests and a packaging script. The package has not yet been validated by the official Otzaria validator or tested in a real Otzaria installation.
+**Status: integrated prototype.** The repository now contains the MCP companion, complete plugin UI/client modules, conservative policy, PDF filter, tests, and packaging script. It has not yet been proven inside a real Otzaria installation.
 
 ## Install and connect
 
@@ -86,13 +86,10 @@ It cannot click or type in other plugins' windows, open tabs, install or restart
 
 ## SDK items that still need authoritative verification
 
-The current manifest is intentionally minimal because the uploaded plugin permission/network fields have not yet been verified against the current Otzaria SDK documentation and host configuration:
+The current manifest uses the official validator's nested `network: { enabled, allowlist }` structure. The validator confirms the declared permission names and recognizes `network.fetch` as known-but-undocumented; the runtime method's exact parameter/return shape and redirect behavior still need confirmation:
 
-- Manifest keys `networkEnabled` and `networkAllowlist`.
-- Permission strings `network.localhost` and `network.access`.
-- The `network.fetch` method and its `{ url, method, headers, body }` parameters.
-- The parameter shapes and return values for `storage.get` and `storage.set`.
-- Whether `127.0.0.1` / `localhost` and the Oraysa hosts must also be added to an Otzaria host-level network allowlist.
+- Exact runtime behavior and parameter/return shapes for `network.fetch`, `storage.get`, and `storage.set`.
+- Whether Otzaria's fetch response exposes its final URL so redirects can be independently checked. Host-level allowlist enforcement is required regardless.
 
 The browser-fetch fallback does not remove any host-level permission or WebView networking restrictions.
 
@@ -107,4 +104,4 @@ npm run build
 
 The official [Otzaria plugin validator](https://github.com/Otzaria/otzaria-plugin-validator) remains authoritative for the installable plugin package. The repository's manifest check is only a preliminary preflight.
 
-Run `npm test` for the policy and plugin/HTTP protocol tests. Run `npm run pack` to produce `dist/test-bridge-0.2.0.otzplugin`. These tests exercise the plugin agent against a local test HTTP companion; they do not yet prove the TypeScript MCP server passes the same suite, nor do they replace a real Otzaria installation test. Run `npm install && npm run build` separately; a successful dependency-enabled build has not yet been verified.
+Run `npm test` for policy tests, plugin/HTTP protocol tests, and the compiled MCP-server integration test. Run `npm run pack` to produce `dist/test-bridge-0.2.0.otzplugin`. CI also runs the official Otzaria validator with publishing disabled. A real Otzaria installation/runtime test is still required.
