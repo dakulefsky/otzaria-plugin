@@ -1,6 +1,6 @@
 import http from "node:http";
 import { randomBytes, timingSafeEqual } from "node:crypto";
-import { chmod, mkdir, readFile, writeFile } from "node:fs/promises";
+import { chmod, lstat, mkdir, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
@@ -31,8 +31,11 @@ export class LocalBridge {
   async start(requestedPort = Number(process.env.OTZARIA_BRIDGE_PORT ?? 47615)) {
     const tokenDir = process.env.OTZARIA_BRIDGE_DIR ?? path.join(os.homedir(), ".otzaria-bridge");
     await mkdir(tokenDir, { recursive: true, mode: 0o700 });
+    await chmod(tokenDir, 0o700);
     this.tokenFile = path.join(tokenDir, "token");
     try {
+      const tokenStat = await lstat(this.tokenFile);
+      if (!tokenStat.isFile() || tokenStat.isSymbolicLink()) throw new Error("pairing token path must be a regular file");
       const existing = (await readFile(this.tokenFile, "utf8")).trim();
       if (/^[0-9a-f]{32}$/.test(existing)) this.token = existing;
     } catch { /* create a new pairing token below */ }
