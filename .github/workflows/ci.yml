@@ -1,7 +1,7 @@
 name: CI
 on: [push, pull_request]
 jobs:
-  build:
+  companion:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -11,3 +11,14 @@ jobs:
           cache: npm
       - run: npm install
       - run: npm run build
+      - run: npm test
+      - run: npm run pack
+  otzaria-plugin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Otzaria/otzaria-plugin-validator@v1
+        with:
+          path: plugin-integration
+          build: 'true'
+          publish: 'false'
