@@ -24,7 +24,7 @@
     .then(function(s){if(s&&typeof s==='object'&&'token'in s){delete s.token;try{localStorage.setItem(KEY,JSON.stringify(s));}catch(e){}bridge('storage.set',{key:KEY,value:JSON.stringify(s)}).catch(function(){});}return s;});
   }
   function http(method,path,body){
-    var s=settings();if(!/^\\d{2,5}$/.test(s.port))return Promise.reject(new Error('Port must be a number'));
+    var s=settings();if(!window.BridgeCore.isValidPort(s.port))return Promise.reject(new Error('Port must be a number'));
     var url='http://127.0.0.1:'+s.port+path,headers={authorization:'Bearer '+s.token,'content-type':'application/json'},bodyText=body===undefined?undefined:JSON.stringify(body),p;
     if(s.transport==='bridge'){
       p=bridge(s.method,{url:url,method:method,headers:headers,body:bodyText}).then(function(res){var u=window.BridgeCore.unwrapHttp(res),j=null;try{j=JSON.parse(u.body);}catch(e){}return{status:u.status,json:j};});
