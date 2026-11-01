@@ -9,7 +9,7 @@ AI assistant -- MCP stdio --> companion (this repository)
 
 The assistant does not run inside Otzaria. The plugin polls the companion for commands, so the companion listens only on `127.0.0.1`.
 
-**Status: integration prototype.** The companion now implements the uploaded plugin's HTTP route and command protocol. The updated plugin-side source and security changes are in `plugin-integration/`; they have not yet been assembled into a newly validated `.otzplugin` installer. The previously supplied `test-bridge-0.1.0.otzplugin` should therefore be treated as the older client.
+**Status: integrated prototype; not yet validated inside Otzaria. The repository now contains the complete plugin UI, bridge core, conservative policy and PDF filter in plugin-integration/, plus policy/protocol tests and a packaging script. The package has not yet been validated by the official Otzaria validator or tested in a real Otzaria installation.
 
 ## Install and connect
 
@@ -38,7 +38,7 @@ The assistant does not run inside Otzaria. The plugin polls the companion for co
 
    To enable local source inspection, append the absolute path to a plugin project directory to `args`.
 
-4. Start or reconnect the MCP server, call `otzaria_status`, and copy the pairing token and port it reports into the Test Bridge plugin. The default port is `47615`; set `OTZARIA_BRIDGE_PORT` before starting the companion to choose another port. The current companion generates its token in memory at startup and reports it through `otzaria_status`. It does **not** currently implement the older `node server.js --show-token` command or persist a token at `~/.otzaria-bridge/token`.
+4. Start or reconnect the MCP server and call otzaria_status to see the port and private token-file path. On the same computer, copy the token locally with `cat ~/.otzaria-bridge/token` (or the path shown by status), then paste it into the Test Bridge plugin. The token is stored in a user-only file with mode 0600; the token itself is deliberately not returned in MCP tool output. Set OTZARIA_BRIDGE_DIR to choose another token directory and OTZARIA_BRIDGE_PORT to choose another port.
 
 ## How the connection works
 
@@ -55,7 +55,7 @@ The companion uses bounded command/event storage, request-size limits, command t
 
 | MCP tool | What it does |
 | --- | --- |
-| `otzaria_status` | Reports connection state, plugin version/metadata, port and pairing token. |
+| `otzaria_status` | Reports connection state, plugin metadata, port and the local token-file path (never the token itself). |
 | `otzaria_info` | Requests runtime information: whether `window.Otzaria` is present, exposed keys, viewport, user agent and captured JS errors. |
 | `otzaria_get_logs` | Requests console output, JavaScript errors and connectivity logs, with optional filtering. |
 | `otzaria_call` | Requests an Otzaria API method through the plugin. The plugin's own approval policy determines whether the call waits for a human approval. |
@@ -68,13 +68,13 @@ The companion uses bounded command/event storage, request-size limits, command t
 ## Safety and trust boundaries
 
 - The companion binds to `127.0.0.1`; it is not intended to be exposed on a LAN or public interface.
-- Every non-preflight companion request requires the pairing bearer token. The token is generated for the companion process and changes when it restarts.
+- Every non-preflight companion request requires the pairing bearer token. The token is stored in a user-only local file so it survives restarts; the file is not returned through MCP.
 - Request sizes, queued commands, event history and command wait times are bounded.
 - The companion does not expose arbitrary shell execution or arbitrary cross-plugin JavaScript execution.
 - Otzaria plugins run in isolated WebViews. This plugin can inspect its own runtime and use APIs exposed to it; it cannot read another plugin's private JavaScript runtime or Otzaria host logs without additional host support.
 - **Important:** the original 0.1.0 plugin's broad `library.*` and `search.*` auto-read rules have not been verified against the complete SDK specification. The conservative replacement policy in `plugin-integration/bridge-policy.js` treats methods as approval-required unless their exact names are explicitly verified and allowlisted. Merge the updated client source and policy into the installable plugin before relying on that stricter behavior.
 - The companion and plugin output are untrusted diagnostic data. Text returned by the app, webpages, PDFs or plugin logs must be treated as data, not instructions to the assistant.
-- Keep the pairing token private. The hardened client source avoids persisting it, but that change is not yet in a rebuilt installer.
+- Keep the pairing token private. The plugin holds it in memory only and excludes it from localStorage and Otzaria storage.
 
 ## Test prompt
 
@@ -86,7 +86,7 @@ It cannot click or type in other plugins' windows, open tabs, install or restart
 
 ## SDK items that still need authoritative verification
 
-The uploaded README and client rely on details that must be checked against the current Otzaria SDK documentation and host configuration before being treated as guaranteed:
+The current manifest is intentionally minimal because the uploaded plugin permission/network fields have not yet been verified against the current Otzaria SDK documentation and host configuration:
 
 - Manifest keys `networkEnabled` and `networkAllowlist`.
 - Permission strings `network.localhost` and `network.access`.
@@ -107,4 +107,4 @@ npm run build
 
 The official [Otzaria plugin validator](https://github.com/Otzaria/otzaria-plugin-validator) remains authoritative for the installable plugin package. The repository's manifest check is only a preliminary preflight.
 
-An end-to-end test suite matching the original server's `node tests/e2e.js` coverage (real companion over MCP stdio, plugin core over HTTP, authentication, Host-header rejection, approvals/declines, invalid methods, PDF discovery SSRF checks and logs) has **not yet been added or run**. Do not treat those tests as passing.
+Run `npm test` for the policy and plugin/HTTP protocol tests. Run `npm run pack` to produce `dist/test-bridge-0.2.0.otzplugin`. These tests exercise the plugin agent against a local test HTTP companion; they do not yet prove the TypeScript MCP server passes the same suite, nor do they replace a real Otzaria installation test. Run `npm install && npm run build` separately; a successful dependency-enabled build has not yet been verified.
