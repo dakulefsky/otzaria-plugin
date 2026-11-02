@@ -1,0 +1,23 @@
+name: Windows Manager
+on:
+  push:
+    branches: [feature/secure-mcp-tunnel-windows]
+    paths: ['windows-manager/**', '.github/workflows/windows-manager.yml']
+  pull_request:
+    paths: ['windows-manager/**', '.github/workflows/windows-manager.yml']
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Publish self-contained Windows x64 app
+        run: dotnet publish windows-manager/OtzariaBridgeManager.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OtzariaBridgeManager-win-x64
+          path: windows-manager/bin/Release/net8.0-windows/win-x64/publish/
+          if-no-files-found: error
