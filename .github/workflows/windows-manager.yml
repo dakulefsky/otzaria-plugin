@@ -60,9 +60,9 @@ jobs:
           if (-not $tcExe) { throw 'tunnel-client.exe was not found in the verified OpenAI archive.' }
           Copy-Item $tcExe.FullName (Join-Path $out 'tunnel-client.exe')
           Invoke-WebRequest 'https://github.com/openai/tunnel-client/releases/download/v0.0.19/tunnel-client-v0.0.19-windows-amd64-licenses.txt' -OutFile (Join-Path $out 'tunnel-client-licenses.txt')
-          Compress-Archive -Path (Join-Path $out '*') -DestinationPath 'OtzariaBridge-Windows-x64.zip' -Force
+          if (-not (Test-Path (Join-Path $out 'OtzariaBridgeManager.exe')) -or -not (Test-Path (Join-Path $out 'runtime/node.exe')) -or -not (Test-Path (Join-Path $out 'tunnel-client.exe')) -or -not (Test-Path (Join-Path $out 'companion/index.js'))) { throw 'Portable package is missing a required component.' }
       - uses: actions/upload-artifact@v4
         with:
           name: OtzariaBridge-Windows-x64
-          path: OtzariaBridge-Windows-x64.zip
+          path: windows-manager/package/
           if-no-files-found: error
