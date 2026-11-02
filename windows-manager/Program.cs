@@ -42,6 +42,10 @@ internal sealed class ManagerForm : Form
         apiKey.UseSystemPasswordChar = true;
         secretFile = Path.Combine(root, "runtime-key.dpapi");
         profileFile = Path.Combine(root, "otzaria.yaml");
+        var appDir = AppContext.BaseDirectory;
+        tunnelExe.Text = Path.Combine(appDir, "tunnel-client.exe");
+        nodeExe.Text = Path.Combine(appDir, "runtime", "node.exe");
+        companion.Text = Path.Combine(appDir, "companion", "index.js");
         pairingToken.ReadOnly = true;
         Directory.CreateDirectory(root);
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(18), ColumnCount = 2, AutoScroll = true };
