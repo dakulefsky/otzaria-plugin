@@ -37,6 +37,7 @@ internal sealed class ManagerForm : Form
         Text = "Otzaria Test Bridge";
         Width = 760; Height = 500; MinimumSize = new Size(650, 420);
         StartPosition = FormStartPosition.CenterScreen;
+        apiKey.UseSystemPasswordChar = true;
         secretFile = Path.Combine(root, "runtime-key.dpapi");
         profileFile = Path.Combine(root, "otzaria.yaml");
         Directory.CreateDirectory(root);
