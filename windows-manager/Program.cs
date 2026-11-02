@@ -161,6 +161,19 @@ internal sealed class ManagerForm : Form
         }
         catch { status.Text = process is { HasExited: false } ? "Tunnel process is running; health endpoint is not ready yet." : "Tunnel is not running."; }
     }
+    void ReadPairingToken()
+    {
+        try
+        {
+            var tokenPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".otzaria-bridge", "token");
+            if (!File.Exists(tokenPath)) return;
+            var value = File.ReadAllText(tokenPath).Trim();
+            if (System.Text.RegularExpressions.Regex.IsMatch(value, "^[0-9a-f]{32}$"))
+                pairingToken.Text = value;
+        }
+        catch { }
+    }
+
     void StopTunnel()
     {
         try { if (process is { HasExited: false }) process.Kill(true); } catch { }
