@@ -23,6 +23,7 @@ internal sealed class ManagerForm : Form
     readonly TextBox tunnelExe = Field("Path to official tunnel-client.exe");
     readonly TextBox nodeExe = Field("Path to node.exe (v20+)");
     readonly TextBox companion = Field("Path to companion dist/index.js");
+    readonly TextBox pairingToken = Field("Waiting for companion token…");
     readonly Label status = new() { AutoSize = true, Text = "Not configured", Padding = new Padding(0, 8, 0, 8) };
     readonly Button start = new() { Text = "Save & Start", AutoSize = true };
     readonly Button stop = new() { Text = "Stop", AutoSize = true, Enabled = false };
@@ -31,6 +32,7 @@ internal sealed class ManagerForm : Form
     readonly string root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OtzariaBridge");
     readonly string secretFile;
     readonly string profileFile;
+    readonly System.Windows.Forms.Timer tokenTimer = new() { Interval = 1000 };
 
     public ManagerForm()
     {
@@ -40,6 +42,7 @@ internal sealed class ManagerForm : Form
         apiKey.UseSystemPasswordChar = true;
         secretFile = Path.Combine(root, "runtime-key.dpapi");
         profileFile = Path.Combine(root, "otzaria.yaml");
+        pairingToken.ReadOnly = true;
         Directory.CreateDirectory(root);
         var layout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(18), ColumnCount = 2, AutoScroll = true };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180));
@@ -50,6 +53,12 @@ internal sealed class ManagerForm : Form
         AddRow(layout, "Tunnel client", BrowseRow(tunnelExe, "tunnel-client.exe"));
         AddRow(layout, "Node.js runtime", BrowseRow(nodeExe, "node.exe"));
         AddRow(layout, "Companion entry point", BrowseRow(companion, "index.js"));
+        var tokenPanel = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true };
+        pairingToken.Width = 390;
+        var copyToken = new Button { Text = "Copy token", AutoSize = true };
+        copyToken.Click += (_, _) => { if (!string.IsNullOrWhiteSpace(pairingToken.Text) && pairingToken.Text != "Waiting for companion token…") Clipboard.SetText(pairingToken.Text); };
+        tokenPanel.Controls.Add(pairingToken); tokenPanel.Controls.Add(copyToken);
+        AddRow(layout, "Plugin pairing token", tokenPanel);
         var note = new Label { AutoSize = true, MaximumSize = new Size(510, 0), Text = "The API key is encrypted with Windows DPAPI for this Windows account. It is injected only into the tunnel process environment; it is never written to the profile or command line. The companion remains local to this PC." };
         AddRow(layout, "Security", note);
         var buttons = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight };
@@ -59,7 +68,8 @@ internal sealed class ManagerForm : Form
         start.Click += async (_, _) => await StartTunnel();
         stop.Click += (_, _) => StopTunnel();
         health.Click += async (_, _) => await CheckHealth();
-        FormClosing += (_, _) => StopTunnel();
+        FormClosing += (_, _) => { tokenTimer.Stop(); StopTunnel(); };
+        tokenTimer.Tick += (_, _) => ReadPairingToken();
         LoadSaved();
     }
 
@@ -111,29 +121,23 @@ internal sealed class ManagerForm : Form
                 apiKey.Clear();
             }
             var command = Q(nodeExe.Text) + " " + Q(companion.Text);
-            var yaml = $@"config_version: 1
-control_plane:
-  base_url: ""https://api.openai.com""
-  tunnel_id: {Q(tunnelId.Text.Trim())}
-  api_key: ""env:CONTROL_PLANE_API_KEY""
-health:
-  listen_addr: ""127.0.0.1:47616""
-log:
-  level: info
-  format: json
-mcp:
-  commands:
-    - channel: main
-      command: {Q(command)}
-";
-            File.WriteAllText(profileFile, yaml, new UTF8Encoding(false));
+            var init = new ProcessStartInfo(tunnelExe.Text) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true, WorkingDirectory = Path.GetDirectoryName(tunnelExe.Text)! };
+            foreach (var arg in new[] { "init", "--sample", "sample_mcp_stdio_local", "--profile", "otzaria", "--profile-dir", root, "--tunnel-id", tunnelId.Text.Trim(), "--mcp-command", command, "--health-listen-addr", "127.0.0.1:8080", "--force" }) init.ArgumentList.Add(arg);
+            using (var initProcess = Process.Start(init) ?? throw new Exception("Could not create tunnel profile."))
+            {
+                var initOut = await initProcess.StandardOutput.ReadToEndAsync();
+                var initErr = await initProcess.StandardError.ReadToEndAsync();
+                await initProcess.WaitForExitAsync();
+                if (initProcess.ExitCode != 0) throw new Exception("Tunnel profile setup failed: " + initErr + initOut);
+            }
             var key = Encoding.UTF8.GetString(ProtectedData.Unprotect(File.ReadAllBytes(secretFile), null, DataProtectionScope.CurrentUser));
             var psi = new ProcessStartInfo(tunnelExe.Text) { UseShellExecute = false, CreateNoWindow = true, WorkingDirectory = Path.GetDirectoryName(tunnelExe.Text)! };
-            psi.ArgumentList.Add("run"); psi.ArgumentList.Add("--profile-file"); psi.ArgumentList.Add(profileFile);
+            psi.ArgumentList.Add("run"); psi.ArgumentList.Add("--profile"); psi.ArgumentList.Add("otzaria"); psi.ArgumentList.Add("--profile-dir"); psi.ArgumentList.Add(root);
             psi.Environment["CONTROL_PLANE_API_KEY"] = key;
             process = Process.Start(psi) ?? throw new Exception("Could not start tunnel-client.");
             _ = Task.Run(async () => { try { var p = process; await p!.WaitForExitAsync(); if (IsHandleCreated) BeginInvoke(() => { status.Text = "Tunnel stopped (exit " + p.ExitCode + ")"; start.Enabled = true; stop.Enabled = false; }); } catch { } });
-            status.Text = "Tunnel process started. Checking readiness…";
+            status.Text = "Tunnel process started. Waiting for readiness…";
+            tokenTimer.Start();
             start.Enabled = false; stop.Enabled = true;
             await Task.Delay(1800);
             await CheckHealth();
@@ -152,8 +156,8 @@ mcp:
         try
         {
             using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
-            var response = await client.GetAsync("http://127.0.0.1:47616/healthz");
-            status.Text = response.IsSuccessStatusCode ? "Tunnel-client healthy. Confirm readiness in its local status page." : "Tunnel-client responded: " + (int)response.StatusCode;
+            var response = await client.GetAsync("http://127.0.0.1:8080/readyz");
+            status.Text = response.IsSuccessStatusCode ? "Tunnel-client is ready. Open http://127.0.0.1:8080/ui for local status." : "Tunnel-client responded: " + (int)response.StatusCode;
         }
         catch { status.Text = process is { HasExited: false } ? "Tunnel process is running; health endpoint is not ready yet." : "Tunnel is not running."; }
     }
