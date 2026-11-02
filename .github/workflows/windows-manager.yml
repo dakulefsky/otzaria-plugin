@@ -1,0 +1,68 @@
+name: Windows Manager
+on:
+  push:
+    branches: [feature/secure-mcp-tunnel-windows]
+    paths: ['windows-manager/**', 'src/**', 'package.json', 'tsconfig.json', '.github/workflows/windows-manager.yml']
+  pull_request:
+    paths: ['windows-manager/**', 'src/**', 'package.json', 'tsconfig.json', '.github/workflows/windows-manager.yml']
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build bundled MCP companion
+        run: |
+          npm install
+          npm run build
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Publish self-contained Windows x64 manager
+        run: dotnet publish windows-manager/OtzariaBridgeManager.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+      - name: Assemble portable Windows package with verified runtimes
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $out = Join-Path $PWD 'windows-manager/package'
+          New-Item -ItemType Directory -Force -Path $out, (Join-Path $out 'runtime'), (Join-Path $out 'companion') | Out-Null
+          Copy-Item 'windows-manager/bin/Release/net8.0-windows/win-x64/publish/OtzariaBridgeManager.exe' $out
+          Copy-Item 'dist/index.js' (Join-Path $out 'companion/index.js')
+
+          # Official Node.js 22 LTS Windows x64 archive; verify against its published SHASUMS256.txt.
+          $index = Invoke-RestMethod 'https://nodejs.org/dist/index.json'
+          $node = $index | Where-Object { $_.version -match '^v22\.' -and $_.lts } | Select-Object -First 1
+          if (-not $node) { throw 'Could not find the current Node.js 22 LTS release.' }
+          $nodeZipName = "node-$($node.version)-win-x64.zip"
+          $nodeBase = "https://nodejs.org/dist/$($node.version)"
+          Invoke-WebRequest "$nodeBase/$nodeZipName" -OutFile $nodeZipName
+          Invoke-WebRequest "$nodeBase/SHASUMS256.txt" -OutFile 'node-SHASUMS256.txt'
+          $nodeLine = Select-String -Path 'node-SHASUMS256.txt' -Pattern ([regex]::Escape($nodeZipName) + '$') | Select-Object -First 1
+          if (-not $nodeLine) { throw 'Node.js archive checksum was not published.' }
+          $nodeExpected = ($nodeLine.Line -split '\s+')[0]
+          $nodeActual = (Get-FileHash $nodeZipName -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($nodeActual -ne $nodeExpected.ToLowerInvariant()) { throw 'Node.js archive SHA-256 mismatch.' }
+          Expand-Archive $nodeZipName 'node-extracted' -Force
+          Copy-Item (Join-Path (Get-ChildItem 'node-extracted' -Directory | Select-Object -First 1).FullName 'node.exe') (Join-Path $out 'runtime/node.exe')
+
+          # Official OpenAI tunnel-client v0.0.19 Windows x64 release; pinned SHA-256 from GitHub release metadata.
+          $tcName = 'tunnel-client-v0.0.19-windows-amd64.zip'
+          $tcUrl = "https://github.com/openai/tunnel-client/releases/download/v0.0.19/$tcName"
+          $tcExpected = '1d0ecc3a54f2a51e27a635ac155f40fbb95df58c52cdeddf6c75532cc0bbeb25'
+          Invoke-WebRequest $tcUrl -OutFile $tcName
+          $tcActual = (Get-FileHash $tcName -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($tcActual -ne $tcExpected) { throw 'OpenAI tunnel-client archive SHA-256 mismatch.' }
+          Expand-Archive $tcName 'tunnel-client-extracted' -Force
+          $tcExe = Get-ChildItem 'tunnel-client-extracted' -Filter 'tunnel-client.exe' -Recurse | Select-Object -First 1
+          if (-not $tcExe) { throw 'tunnel-client.exe was not found in the verified OpenAI archive.' }
+          Copy-Item $tcExe.FullName (Join-Path $out 'tunnel-client.exe')
+          Invoke-WebRequest 'https://github.com/openai/tunnel-client/releases/download/v0.0.19/tunnel-client-v0.0.19-windows-amd64-licenses.txt' -OutFile (Join-Path $out 'tunnel-client-licenses.txt')
+          if (-not (Test-Path (Join-Path $out 'OtzariaBridgeManager.exe')) -or -not (Test-Path (Join-Path $out 'runtime/node.exe')) -or -not (Test-Path (Join-Path $out 'tunnel-client.exe')) -or -not (Test-Path (Join-Path $out 'companion/index.js'))) { throw 'Portable package is missing a required component.' }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OtzariaBridge-Windows-x64
+          path: windows-manager/package/
+          if-no-files-found: error

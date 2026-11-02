@@ -42,6 +42,10 @@ The assistant does not run inside Otzaria. The plugin polls the companion for co
 
 4. Start or reconnect the MCP server and call otzaria_status to see the port and private token-file path. On the same computer, copy the token locally with `cat ~/.otzaria-bridge/token` (or the path shown by status), then paste it into the Test Bridge plugin. The token is stored in a user-only file with mode 0600; the token itself is deliberately not returned in MCP tool output. Set OTZARIA_BRIDGE_DIR to choose another token directory and OTZARIA_BRIDGE_PORT to choose another port.
 
+## Remote connection (Dell running Otzaria, ChatGPT on another computer)
+
+For a secure outbound-only connection, see [Secure MCP Tunnel on Windows](docs/SECURE-MCP-TUNNEL-WINDOWS.md). The tunnel client runs on the Dell and launches this companion over stdio; the companion remains loopback-only. This requires an eligible ChatGPT workspace/account and Platform tunnel permissions. A tunnel does not grant MCP features to an otherwise ineligible ChatGPT plan.
+
 ## How the connection works
 
 The companion implements the plugin's polling protocol:
