@@ -59,7 +59,7 @@ jobs:
           $tcExe = Get-ChildItem 'tunnel-client-extracted' -Filter 'tunnel-client.exe' -Recurse | Select-Object -First 1
           if (-not $tcExe) { throw 'tunnel-client.exe was not found in the verified OpenAI archive.' }
           Copy-Item $tcExe.FullName (Join-Path $out 'tunnel-client.exe')
-          Copy-Item 'https://github.com/openai/tunnel-client/releases/download/v0.0.19/tunnel-client-v0.0.19-windows-amd64-licenses.txt' (Join-Path $out 'tunnel-client-licenses.txt')
+          Invoke-WebRequest 'https://github.com/openai/tunnel-client/releases/download/v0.0.19/tunnel-client-v0.0.19-windows-amd64-licenses.txt' -OutFile (Join-Path $out 'tunnel-client-licenses.txt')
           Compress-Archive -Path (Join-Path $out '*') -DestinationPath 'OtzariaBridge-Windows-x64.zip' -Force
       - uses: actions/upload-artifact@v4
         with:
